@@ -16,13 +16,20 @@ def generator_unit(frame_counter):
         print("cannot print the Message")
     return can_msg
 
-def detection_unit(last_arival, msg):
+def detection_unit(msg):
+    invalid_array = [0, 0, 0]
+    global last_arival
     rate = time.time() - last_arival
+    if rate <= 0.1:
+        invalid_array[0] = 1
     last_arival = time.time()
-    print(rate)
+    if invalid_array[0] == 1:
+        print("Valid!")
+    else:
+        print("Invalid - rate: {}".format(rate))
     time.sleep(randint(5, 10)/100)
 
 while True:
-    detection_unit(last_arival, generator_unit(frame_counter))
+    detection_unit(generator_unit(frame_counter))
  #   generator_unit(frame_counter)
     frame_counter += 1
