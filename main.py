@@ -97,7 +97,6 @@ def reporting_unit(results):  # results[0] contain the CAN message & results[1] 
                      str(can_msg.timestamp), str(hexData), "Valid")
     time.sleep(randint(5, 10) / 100)
 
-
 while True:
     reporting_unit(detection_unit(generator_unit()))
     frame_counter += 1
