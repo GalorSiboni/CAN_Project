@@ -36,9 +36,9 @@ def length_validation(msg):
     if id_dlc_dict.get(msg.arbitration_id) is not None:
         if id_dlc_dict.get(msg.arbitration_id) == msg.dlc:
             return 1
-        else:
-            id_dlc_dict[msg.arbitration_id] = msg.dlc
-            return 0
+
+    id_dlc_dict[msg.arbitration_id] = msg.dlc
+    return 0
 
 
 def data_validation(msg):
@@ -120,13 +120,14 @@ def reporting_unit(results):  # results[0] contain the CAN message & results[1] 
     global frame_counter
 
     can_msg = results[0]
-
+    print(results[1])
     # Convert the CAN.data byte array to hexadecimal presentation
     hexData = can_msg.data.hex()
 
     if 1 in results[1]:
         invalidReason = invalid_reason_checker(results[1])
-        logging.error('Frame %s,%s,%s,%s,%s', frame_counter, str(can_msg.timestamp), str(hexData), "Invalid", invalidReason)
+        logging.error('Frame %s,%s,%s,%s,%s', frame_counter, str(can_msg.timestamp), str(hexData), "Invalid",
+                      invalidReason)
     else:
         logging.info('%s,%s,%s', str(can_msg.timestamp), str(hexData), "Valid")
 
