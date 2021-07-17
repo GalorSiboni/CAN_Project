@@ -36,10 +36,9 @@ def length_validation(msg):
     if id_dlc_dict.get(msg.arbitration_id) is not None:
         if id_dlc_dict.get(msg.arbitration_id) == msg.dlc:
             return 1
-
-    else:
-        id_dlc_dict[msg.arbitration_id] = msg.dlc
-    return 0
+        else:
+            id_dlc_dict[msg.arbitration_id] = msg.dlc
+            return 0
 
 
 def data_validation(msg):
