@@ -6,20 +6,21 @@ import logging
 
 logging.basicConfig(filename='CanLog.log', level=logging.INFO)
 
-# const id options array
+# const arbitration id options array
 CONST_ID_OPTIONS_ARRAY = [0x100, 0x200, 0x300]
 
 # store the last CAN message frame arrival time
 last_arrival = time.time()
 
-# Store the last CAN message DLC for each arbitration id
+# Store the last CAN message DLC for each arbitration id => Dictionary(key=Arbitration id, value=DLC)
 id_dlc_dict = {}
+
+# Store the last CAN message data for each arbitration id => Dictionary(key=Arbitration id, value=Data Field as int
+# array)
+id_data_dict = {}
 
 # Current CAN frame indicator
 frame_counter = 0
-
-# Store the last CAN message data for each arbitration id
-id_data_dict = {}
 
 
 def rate_validation():
@@ -51,8 +52,7 @@ def data_validation(msg):
                 id_data_dict[msg.arbitration_id] = int_values
                 return 1
 
-    else:
-        id_data_dict[msg.arbitration_id] = int_values
+    id_data_dict[msg.arbitration_id] = int_values
     return 0
 
 
@@ -69,7 +69,7 @@ def invalid_reason_checker(invalid_array):
     elif invalid_array[0] == 0 and invalid_array[1] == 1 and invalid_array[2] == 0:
         return invalidReason + "Length"
     elif invalid_array[0] == 0 and invalid_array[1] == 1 and invalid_array[2] == 1:
-        return invalidReason + "length and Data"
+        return invalidReason + "Length and Data"
     else:
         return invalidReason + "Data"
 
@@ -85,14 +85,46 @@ def generator_unit():
     for i in range(bytearray_size):
         random_bytearray.append(randint(0, 255))  # 255 = 2^8 - 1
 
-    # fill all the other data field to be constant "1"
+    # Fill all the other data field to be constant "1"
     if bytearray_size != 8:
         for j in range(bytearray_size, 8):
             random_bytearray.append(1)
 
-    # Create the CAN message
+    # Byte value violation Error Handling
+    for x in random_bytearray:
+        if isinstance(x, int):
+            pass
+        else:
+            raise TypeError("Byte value must be from type int")
+
+        if x < 0 or x > 256:
+            raise ValueError("Byte must be in range(0, 256)")
+
+    # Arbitration id value violation Error Handling
+    for i in CONST_ID_OPTIONS_ARRAY:
+        if isinstance(i, int):
+            pass
+        else:
+            raise TypeError("Arbitration id must be from type int")
+
+        if i < 0 or i > 1023:
+            raise ValueError("CAN 2.0A message arbitration id must be in range(0, 1023)")
+
+    # DLC value violation Error Handling
+    if bytearray_size < 0 or bytearray_size > 8:
+        raise ValueError("DLC must be in range(0, 8)")
+
+    if isinstance(bytearray_size, int):
+        pass
+    else:
+        raise TypeError("DLC must be from type int")
+
+    # Create the CAN message - CAN 2.0A(bits is available in the Identifier)
     can_msg = can.Message(arbitration_id=CONST_ID_OPTIONS_ARRAY[randint(0, 2)], dlc=bytearray_size,
                           data=random_bytearray, is_extended_id='False')
+
+    # More visual test( i  added the can message frame number to the logger csv format
+    # in order to detect problems and assure that the validation run with no mistakes)
     print("Frame {}: Message id: {},Data: {} , DLC:{}".format(frame_counter, can_msg.arbitration_id,
                                                               [x for x in can_msg.data], can_msg.dlc))
     return can_msg
@@ -113,6 +145,9 @@ def detection_unit(msg):
     # Data Validation
     invalid_array[2] = data_validation(msg)
 
+    if 1 in invalid_array:
+        msg.is_error_frame = True
+
     return [msg, invalid_array]
 
 
@@ -120,21 +155,24 @@ def reporting_unit(results):  # results[0] contain the CAN message & results[1] 
     global frame_counter
 
     can_msg = results[0]
+
+    # test print of the invalid values for comprehension with the frame test at the generate unit and the logger
     print(results[1])
+
     # Convert the CAN.data byte array to hexadecimal presentation
     hexData = can_msg.data.hex()
 
-    if 1 in results[1]:
-        invalidReason = invalid_reason_checker(results[1])
-        logging.error('Frame %s,%s,%s,%s,%s', frame_counter, str(can_msg.timestamp), str(hexData), "Invalid",
-                      invalidReason)
+    invalidReason = invalid_reason_checker(results[1])
+    frameValidation = "Invalid, {}".format(invalidReason) if can_msg.is_error_frame else "Valid"
+    if can_msg.is_error_frame == 0:
+        logging.info('%s,%s,%s', str(can_msg.timestamp), str(hexData), frameValidation)
     else:
-        logging.info('%s,%s,%s', str(can_msg.timestamp), str(hexData), "Valid")
-
+        logging.error('%s,%s,%s', str(can_msg.timestamp), str(hexData), frameValidation)
     # Sleep for random period time of 50mSec to 100 mSec.
     time.sleep(randint(5, 10) / 100)
 
 
+# In order for us to run the unit test, this loop needs to become a comment
 while True:
     reporting_unit(detection_unit(generator_unit()))
     frame_counter += 1
