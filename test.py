@@ -12,10 +12,10 @@ class TestLength(unittest.TestCase):
         Test that it can valid the rate
         """
         time.time()
-        time.sleep(5 / 100)
+        time.sleep(10 / 100)
         result = rate_validation()
         time.time()
-        time.sleep(10 / 100)
+        time.sleep(5 / 100)
         result2 = rate_validation()
         self.assertEqual(result, 0)
         self.assertEqual(result2, 1)

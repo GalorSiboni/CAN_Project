@@ -27,9 +27,10 @@ def rate_validation():
     global last_arrival
     rate = time.time() - last_arrival
     last_arrival = time.time()
-    if rate > 0.1:
-        return 1
-    return 0
+    # if rate < 0.1:
+    #     return 1
+    # return 0
+    return 1 if rate < 0.1 else 0
 
 
 def length_validation(msg):
