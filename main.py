@@ -27,9 +27,7 @@ def rate_validation():
     global last_arrival
     rate = time.time() - last_arrival
     last_arrival = time.time()
-    # if rate < 0.1:
-    #     return 1
-    # return 0
+
     return 1 if rate < 0.1 else 0
 
 
@@ -132,6 +130,8 @@ def generator_unit():
 
 
 def detection_unit(msg):
+    # Initialize the array with zeros, if some value turn to "1" its means that he is Invalid
+    #         [Rate, Length, Data]
     invalid_array = [0, 0, 0]
 
     # Set frame arrival timestamp
